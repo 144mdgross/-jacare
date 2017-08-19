@@ -3,7 +3,7 @@ const router = express.Router();
 
 /* GET users listing. */
 router.get('/', (req, res, next) => {
-  res.json({ artists })
+  // res.json({ artists })
 });
 
 module.exports = router;
