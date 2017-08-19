@@ -14,7 +14,7 @@ app.use(bodyParser.json());
 
 app.use(cookieParser());
 
-app.use('/api//v1/albums', albums);
+app.use('/api/v1/albums', albums);
 app.use('/api/v1/artists', artists);
 
 // catch 404 and forward to error handler
