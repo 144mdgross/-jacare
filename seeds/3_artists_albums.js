@@ -22,13 +22,25 @@ let screen = sorted.filter((item, index, arr) => {
   }
 })
 
+// this array will hold data for ablum_artists table
+let matchedItemIDs = []
+
+for (let i = 0; i < screen.length; i++) {
+    data.forEach((elem, pos, arry) => {
+      if (elem.artist === screen[i].artist) {
+        console.log(pos + 1, i + 1);
+        matchedItemIDs.push({ album_id: pos + 1, artist_id: i + 1 })
+      }
+    })
+}
+
 exports.seed = function(knex) {
   // Deletes ALL existing entries
-  return knex('artists').del()
+  return knex('albums_artists').del()
     .then(function () {
       // Inserts seed entries
-      return knex('artists').insert(
-        screen
+      return knex('albums_artists').insert(
+        matchedItemIDs
       );
     });
 };

@@ -5,7 +5,11 @@ exports.up = function(knex) {
 
     table.string('album')
       .notNullable()
-      .defaultTo("")
+      .defaultTo('')
+
+    table.string('genre')
+      .notNullable()
+      .defaultTo('')
 
     table.integer('year')
       .notNullable()

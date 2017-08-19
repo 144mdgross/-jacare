@@ -2,6 +2,8 @@
 exports.up = function(knex) {
   return knex.schema.createTable('albums_artists', table => {
 
+    table.increments()
+
     table.integer('album_id')
       .references('albums.id')
       .onDelete('CASCADE')

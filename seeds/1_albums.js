@@ -1,7 +1,7 @@
 const data = require('../albums.json')
 
 let albums = data.map((item, index) => {
-  return { album: item.album, id: index + 1 }
+  return { album: item.album, genre: item.genre, year: item.year }
 })
 
 exports.seed = function(knex) {
