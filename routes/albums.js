@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const knex = require('../knex')
+const exists = require('../modules/db_calls').exists
 
 // consider paginating results here
 //consider creating module for knex calls
@@ -24,6 +25,7 @@ router.get('/:id', (req, res, next) => {
     .then(oneAlbum => {
 
 // NOTE: think about enveloping the knex result. do I want to take it out of an array?
+//NOTE: be consisent about how data sent is structured.
       res.json({ oneAlbum })
     })
 })
@@ -75,10 +77,52 @@ router.patch('/:id', (req, res, next) => {
     })
 })
 
-// decide if put is necessary. probably b/c a client may want to put.
-// router.put('/', (req, res, next) => {
-//   res.json('put')
-// })
+// to define rules if client wants to put. That means they want to give me all information i have for albums in db
+// validate that all data needed from client is present before doing put
+router.put('/:id', (req, res, next) => {
+
+let stateOfTheArtist = exists('artists', 'artist', req.body.artist).then(existenceKnown => {
+  console.log(existenceKnown);
+// plug funciton into substack to check for existing artist
+  knex('albums')
+    .where('id', req.params.id)
+    .update({
+      album: req.body.album,
+      genre: req.body.genre,
+      year: req.body.year
+    })
+    .returning('*')
+    .then(updated => {
+      if(existenceKnown.length < 1) {
+        knex('artists')
+          .insert([{ artist: req.body.artist }], '*')
+          .then(newArtist => {
+            knex('albums_artists')
+              .where('album_id', req.params.id)
+              .update({
+                artist_id: newArtist[0].id
+              })
+              .returning('*')
+              .then(result => {
+                res.json({ album: updated[0].album, genre: updated[0].genre, year: updated[0].year, artist: newArtist[0].artist})
+              })
+          })
+      } else {
+        console.log('in else in put for artist existing?');
+        // what if the artist info didn't change? assume that it does otherwise the client should use patch?
+        knex('albums_artists')
+          .where('album_id', req.params.id)
+          .update({
+            artist_id: existenceKnown.id
+          })
+          .then(allUpdated => {
+
+            res.json({ album: updated[0].album, genre: updated[0].genre, year: updated[0].year, artist: existenceKnown.artist })
+          })
+      }
+})
+})
+})
 
 router.delete('/:id', (req, res, next) => {
 

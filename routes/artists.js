@@ -6,9 +6,8 @@ router.get('/', (req, res, next) => {
   knex('artists')
     .orderBy('artist', 'asc')
     .then(index => {
-      // envelope data for a layer of data security
-      let envelope = { index }
-      res.json(envelope)
+
+      res.json({ index })
     })
 });
 
@@ -19,9 +18,10 @@ router.get('/:id', (req, res, next) => {
     .select('artists.artist', 'albums.album')
     .where('albums_artists.artist_id', req.params.id)
     .then(data => {
-      console.log(data);
-      res.json(data)
+
+      res.json({ data })
     })
 })
+
 
 module.exports = router;
