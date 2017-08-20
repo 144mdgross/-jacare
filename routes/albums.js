@@ -23,6 +23,7 @@ router.get('/:id', (req, res, next) => {
     .where('albums.id', req.params.id)
     .then(oneAlbum => {
 
+// NOTE: think about enveloping the knex result. do I want to take it out of an array?
       res.json({ oneAlbum })
     })
 })
@@ -58,16 +59,56 @@ router.post('/', (req, res, next) => {
     })
 })
 
-router.patch('/', (req, res, next) => {
-  res.json('patch')
+// consider how to handle partial data. Or should I force client to send all data and only do a put.
+// do a query to check that info exists where params exist. Then update info that has changed.
+router.patch('/:id', (req, res, next) => {
+
+  knex('albums')
+    .where('id', req.params.id)
+    .then(singleAlbum => {
+        knex('albums')
+          .where('id', req.params.id)
+          .update(req.body)
+          .returning('*')
+          .then(updated => {
+            res.json({ updated })
+          })
+    })
 })
 
-router.put('/', (req, res, next) => {
-  res.json('put')
-})
+// decide if put is necessary. probably b/c a client may want to put.
+// router.put('/', (req, res, next) => {
+//   res.json('put')
+// })
 
-router.delete('/', (req, res, next) => {
-  res.json('delete')
+router.delete('/:id', (req, res, next) => {
+  // so when I delete I need to delete from albums, albums_artists and also artists if there are no more albums belonging to them
+  knex('albums')
+    .where('id', req.params.id)
+    .del()
+    .returning('*')
+    .then(albumGone => {
+
+      knex('albums_artists')
+        .where('id', req.params.id)
+        .del()
+        .returning('*')
+        .then(joinGone => {
+          if (joinGone.length === 1) {
+            knex('artists')
+              .where('id', joinGone[0].artist_id)
+              .del()
+              .returning('*')
+              .then(artistGone => {
+
+                res.json({ id: albumGone[0].id, album: albumGone[0].album, artist: artistGone[0].artist, genre: albumGone[0].genre, year: albumGone[0].year })  
+
+              })
+
+          }
+
+        })
+    })
 })
 
 
