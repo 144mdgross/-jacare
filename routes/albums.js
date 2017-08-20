@@ -59,8 +59,7 @@ router.post('/', (req, res, next) => {
     })
 })
 
-// consider how to handle partial data. Or should I force client to send all data and only do a put.
-// do a query to check that info exists where params exist. Then update info that has changed.
+// validate!
 router.patch('/:id', (req, res, next) => {
 
   knex('albums')
@@ -82,35 +81,41 @@ router.patch('/:id', (req, res, next) => {
 // })
 
 router.delete('/:id', (req, res, next) => {
-  // so when I delete I need to delete from albums, albums_artists and also artists if there are no more albums belonging to them
-  knex('albums')
-    .where('id', req.params.id)
-    .del()
-    .returning('*')
-    .then(albumGone => {
 
-      knex('albums_artists')
-        .where('id', req.params.id)
-        .del()
-        .returning('*')
-        .then(joinGone => {
-          if (joinGone.length === 1) {
-            knex('artists')
-              .where('id', joinGone[0].artist_id)
-              .del()
-              .returning('*')
-              .then(artistGone => {
+knex('albums_artists')
+  .where('album_id', req.params.id)
+  .del()
+  .returning('*')
+  .then(joinGone => {
 
-                res.json({ id: albumGone[0].id, album: albumGone[0].album, artist: artistGone[0].artist, genre: albumGone[0].genre, year: albumGone[0].year })  
+    knex('albums')
+      .where('id', req.params.id)
+      .del()
+      .returning('*')
+      .then(albumGone=> {
 
-              })
+        if (joinGone.length === 1) {
 
-          }
+          knex('artists')
+            .where('id', joinGone[0].artist_id)
+            .del()
+            .returning('*')
+            .then(artistGone => {
 
-        })
-    })
+              res.json({ id: albumGone[0].id, album: albumGone[0].album, artist: artistGone[0].artist, genre: albumGone[0].genre, year: albumGone[0].year })
+
+            })
+        } else {
+
+          knex('artists')
+            .where('id', joinGone[0].artist_id)
+            .then(sendComplete => {
+
+              res.json({ id: albumGone[0].id, album: albumGone[0].album, artist: 'fill in artist info', genre: albumGone[0].genre, year: albumGone[0].year })
+            })
+        }
+      })
+  })
 })
-
-
 
 module.exports = router;
