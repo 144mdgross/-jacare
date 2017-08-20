@@ -22,14 +22,14 @@ router.get('/:id', (req, res, next) => {
   knex('albums')
     .join('albums_artists', 'albums.id', 'albums_artists.album_id')
     .join('artists', 'artists.id', 'albums_artists.artist_id')
-    .select('albums.id as album_id', 'albums.album', 'albums.year', 'albums.genre', 'artists.artist')
+    .select('albums.id as album_id', 'albums.album', 'albums.year', 'albums.genre', 'artists.artist', 'albums_artists.artist_id')
     .where('albums.id', req.params.id)
     .then(album => {
 
       // NOTE: think about enveloping the knex result. do I want to take it out of an array?
       //NOTE: be consisent about how data sent is structured.
       res.json({
-        abum
+        album
       })
     })
 })
