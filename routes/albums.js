@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const knex = require('../knex')
-const exists = require('../modules/db_calls').exists
+const query = require('../modules/db_calls')
 
 // consider paginating results here
 //consider creating module for knex calls
@@ -72,26 +72,16 @@ router.post('/', (req, res, next) => {
 
 // validate!
 router.patch('/:id', (req, res, next) => {
+  query.updateAlbum(req.params.id, req.body).then(updateAlbumTalbe => {
+    res.json({ updateAlbumTalbe })
+})
 
-  knex('albums')
-    .where('id', req.params.id)
-    .then(singleAlbum => {
-      knex('albums')
-        .where('id', req.params.id)
-        .update(req.body)
-        .returning('*')
-        .then(updated => {
-          res.json({
-            updated
-          })
-        })
-    })
 })
 
 // to define rules if client wants to put. That means they want to give me all information i have for albums in db
 // validate that all data needed from client is present before doing put
 router.put('/:id', (req, res, next) => {
-  let stateOfTheArtist = exists('artists', 'artist', req.body.artist).then(existenceKnown => {
+  let stateOfTheArtist = query.exists('artists', 'artist', req.body.artist).then(existenceKnown => {
 
     knex('albums')
       .where('id', req.params.id)

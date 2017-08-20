@@ -9,12 +9,29 @@ return knex(table)
 
     return result[0]
     })
+}
 
+const updateAlbum = (id, body) => {
+
+return knex('albums')
+    .where('id', id)
+    .then(singleAlbum => {
+
+      return knex('albums')
+        .where('id', singleAlbum[0].id)
+        .update(body)
+        .returning('*')
+        .then(updated => {
+          
+          return updated
+        })
+    })
 }
 
 
 
 
 module.exports = {
-  exists
+  exists,
+  updateAlbum
 }
