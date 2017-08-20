@@ -9,11 +9,11 @@ router.get('/', (req, res, next) => {
   knex('albums')
     .join('albums_artists', 'albums.id', 'albums_artists.album_id')
     .join('artists', 'artists.id', 'albums_artists.artist_id')
-    .select('albums.id as album_id', 'albums.album', 'albums.year', 'albums.genre', 'artists.artist')
-    .then(allAlbums => {
+    .select('albums.id as album_id', 'albums.album', 'albums.year', 'albums.genre', 'artists.artist', 'albums_artists.artist_id')
+    .then(all => {
 
       res.json({
-        allAlbums
+        all
       })
     })
 });
@@ -24,12 +24,12 @@ router.get('/:id', (req, res, next) => {
     .join('artists', 'artists.id', 'albums_artists.artist_id')
     .select('albums.id as album_id', 'albums.album', 'albums.year', 'albums.genre', 'artists.artist')
     .where('albums.id', req.params.id)
-    .then(oneAlbum => {
+    .then(album => {
 
       // NOTE: think about enveloping the knex result. do I want to take it out of an array?
       //NOTE: be consisent about how data sent is structured.
       res.json({
-        oneAlbum
+        abum
       })
     })
 })
