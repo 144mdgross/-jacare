@@ -3,6 +3,8 @@ const router = express.Router();
 const knex = require('../knex')
 const query = require('../modules/db_calls')
 const Boom = require('boom')
+const ev = require('express-validation')
+const validations = require('../validations/album_requests')
 
 // consider paginating results here
 router.get('/', (req, res, next) => {
@@ -24,7 +26,7 @@ router.get('/:id', (req, res, next) => {
     })
 })
 
-router.post('/', (req, res, next) => {
+router.post('/', ev(validations.post), (req, res, next) => {
   query.post(req.body)
     .then(data => {
       res.json({ data })
@@ -32,7 +34,7 @@ router.post('/', (req, res, next) => {
 })
 
 // patch can behave as patch or put
-router.patch('/:id', (req, res, next) => {
+router.patch('/:id', ev(validations.post), (req, res, next) => {
   // check for existing resource before modifying database
   query.exists('albums', 'id', req.params.id)
     .then(albumExists => {
@@ -81,7 +83,7 @@ router.patch('/:id', (req, res, next) => {
     })
 })
 
-router.put('/:id', (req, res, next) => {
+router.put('/:id', ev(validations.post), (req, res, next) => {
 
   query.exists('artists', 'artist', req.body.artist)
     .then(existenceKnown => {
