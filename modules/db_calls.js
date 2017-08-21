@@ -1,33 +1,43 @@
 const knex = require('../knex')
 
+
 const exists = (table, column, identifier) => {
 
 return knex(table)
     .where(column, identifier)
     .then(result => {
+      if(!result[0]) {
+        return false
+      } else {
+        return result[0]
+      }
 
-    return result[0]
     })
 }
 
 const updateAlbum = (id, body) => {
 
+//NOTE: refactor to use exists function
 return knex('albums')
     .where('id', id)
     .then(singleAlbum => {
+      if (!singleAlbum[0]) {
+        return new Error
+      } else {
+        return knex('albums')
+          .where('id', singleAlbum[0].id)
+          .update({
+            album: body.album,
+            genre: body.genre,
+            year: body.year
+          })
+          .returning('*')
+          .then(updated => {
 
-      return knex('albums')
-        .where('id', singleAlbum[0].id)
-        .update({
-          album: body.album,
-          genre: body.genre,
-          year: body.year
-        })
-        .returning('*')
-        .then(updated => {
+            return updated
+          })
+      }
 
-          return updated
-        })
     })
 }
 
@@ -68,6 +78,7 @@ return exists('artists', 'artist', artist)
           })
           .returning('*')
           .then(artistsUpdated => {
+            console.log('artistsUpdated', artistsUpdated);
             return {
               artist_id: artistsUpdated[0].artist_id,
               artist: existence.artist

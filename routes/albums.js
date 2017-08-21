@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const knex = require('../knex')
 const query = require('../modules/db_calls')
+const Boom = require('boom')
 
 // consider paginating results here
 //consider creating module for knex calls
@@ -73,44 +74,44 @@ router.post('/', (req, res, next) => {
 // patch is set up to be able to behave like patch or put to handle
 // variety from clients
 router.patch('/:id', (req, res, next) => {
-
-  if (req.body.artist && !req.body.album) {
-    query.updateArtist(req.params.id, req.body)
-      .then(updatedArtist => {
-        console.log('updatedArtist', updatedArtist);
-        res.json({ updatedArtist })
-      })
-  } else if (req.body.album && !req.body.artist) {
-    query.updateAlbum(req.params.id, req.body)
-      .then(updateAlbumTable => {
-        // for (key of updateAlbumTable) {
-        //   updateObj.key = updateAlbumTable.key
-        // }
-        res.json({ updateAlbumTable })
-    })
-  } else if (req.body.album && req.body.artist) {
-    query.updateAlbum(req.params.id, req.body)
-      .then(upToDate => {
-
-        query.updateArtist(req.params.id, req.body.artist)
-          .then(updatedAll => {
-
-            console.log('updatedAll', updatedAll);
-            res.json({
-              id: upToDate[0].id,
-              album: upToDate[0].album,
-              genre: upToDate[0].genre,
-              year: upToDate[0].year,
-              artist_id: updatedAll.artist_id,
-              artist: updatedAll.artist
+  query.exists('albums', 'album', req.params.id)
+    .then(albumExists => {
+      if (!albumExists) {
+        return next(Boom.notFound(`Album ${req.params.id} does not exist.`))
+      } else {
+        if (req.body.artist && !req.body.album) {
+          query.updateArtist(req.params.id, req.body.artist)
+            .then(updatedArtist => {
+              console.log('updatedArtist', updatedArtist);
+              res.json({
+                updatedArtist
+              })
             })
-          })
-      })
-  }
-
-
-  // res.json({ updateObj })
-
+        } else if (req.body.album && !req.body.artist) {
+          query.updateAlbum(req.params.id, req.body)
+            .then(updateAlbumTable => {
+              res.json({
+                updateAlbumTable
+              })
+            })
+        } else if (req.body.album && req.body.artist) {
+          query.updateAlbum(req.params.id, req.body)
+            .then(upToDate => {
+              query.updateArtist(req.params.id, req.body.artist)
+                .then(updatedAll => {
+                  res.json({
+                    id: upToDate[0].id,
+                    album: upToDate[0].album,
+                    genre: upToDate[0].genre,
+                    year: upToDate[0].year,
+                    artist_id: updatedAll.artist_id,
+                    artist: updatedAll.artist
+                  })
+                })
+            })
+        }
+      }
+    })
 })
 
 // to define rules if client wants to put. That means they want to give me all information i have for albums in db
