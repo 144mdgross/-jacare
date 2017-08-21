@@ -35,7 +35,7 @@ router.post('/', ev(validations.post), (req, res, next) => {
     })
 })
 
-// patch can behave as patch or put
+// patch can behave as patch or put hence the if/else statements
 router.patch('/:id', ev(validations.post), (req, res, next) => {
   // check for existing resource before modifying database
   query.exists('albums', 'id', req.params.id)

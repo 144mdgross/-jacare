@@ -205,11 +205,35 @@ return  knex('albums_artists')
     })
 }
 
+const artistIndex = () => {
+  return  knex('artists')
+      .orderBy('artist', 'asc')
+      .then(index => {
+
+        return index
+      })
+}
+
+const artistAlbums = (id) => {
+
+return  knex('artists')
+    .join('albums_artists', 'artists.id', 'albums_artists.artist_id')
+    .join('albums', 'albums.id', 'albums_artists.album_id')
+    .select('artists.artist', 'albums.album')
+    .where('albums_artists.artist_id', id)
+    .then(data => {
+
+      return data
+    })
+
+}
 module.exports = {
   exists,
   getAll,
   post,
   updateAlbum,
   updateArtist,
-  remove
+  remove,
+  artistIndex,
+  artistAlbums
 }

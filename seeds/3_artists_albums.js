@@ -28,7 +28,6 @@ let matchedItemIDs = []
 for (let i = 0; i < screen.length; i++) {
     data.forEach((elem, pos, arry) => {
       if (elem.artist === screen[i].artist) {
-        console.log(pos + 1, i + 1);
         matchedItemIDs.push({ album_id: pos + 1, artist_id: i + 1 })
       }
     })

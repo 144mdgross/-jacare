@@ -11,9 +11,10 @@ exports.up = function(knex) {
       .notNullable()
       .defaultTo('')
 
-    table.integer('year')
+      //NOTE: year is a string because API expects JSON passed to it
+    table.string('year')
       .notNullable()
-      .defaultTo(2000)
+      .defaultTo('2000')
   })
 };
 
