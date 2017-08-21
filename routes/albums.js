@@ -14,6 +14,8 @@ router.get('/', (req, res, next) => {
     })
 });
 
+//NOTE: Boom is what I typically use for error handling.
+// At the moment Boom only seems to be sending 500 errors.
 router.get('/:id', (req, res, next) => {
   query.exists('albums', 'id', req.params.id)
     .then(album => {
