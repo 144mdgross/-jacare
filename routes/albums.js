@@ -70,16 +70,17 @@ router.post('/', (req, res, next) => {
     })
 })
 
-// validate!
+// patch is set up to be able to behave like patch or put to handle
+// variety from clients
 router.patch('/:id', (req, res, next) => {
 
-  if (req.body.artist) {
+  if (req.body.artist && !req.body.album) {
     query.updateArtist(req.params.id, req.body)
       .then(updatedArtist => {
         console.log('updatedArtist', updatedArtist);
         res.json({ updatedArtist })
       })
-  } else {
+  } else if (req.body.album && !req.body.artist) {
     query.updateAlbum(req.params.id, req.body)
       .then(updateAlbumTable => {
         // for (key of updateAlbumTable) {
@@ -87,6 +88,24 @@ router.patch('/:id', (req, res, next) => {
         // }
         res.json({ updateAlbumTable })
     })
+  } else if (req.body.album && req.body.artist) {
+    query.updateAlbum(req.params.id, req.body)
+      .then(upToDate => {
+
+        query.updateArtist(req.params.id, req.body.artist)
+          .then(updatedAll => {
+
+            console.log('updatedAll', updatedAll);
+            res.json({
+              id: upToDate[0].id,
+              album: upToDate[0].album,
+              genre: upToDate[0].genre,
+              year: upToDate[0].year,
+              artist_id: updatedAll.artist_id,
+              artist: updatedAll.artist
+            })
+          })
+      })
   }
 
 

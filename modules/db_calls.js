@@ -18,7 +18,11 @@ return knex('albums')
 
       return knex('albums')
         .where('id', singleAlbum[0].id)
-        .update(body)
+        .update({
+          album: body.album,
+          genre: body.genre,
+          year: body.year
+        })
         .returning('*')
         .then(updated => {
 
@@ -27,16 +31,16 @@ return knex('albums')
     })
 }
 
-const updateArtist = (albumId, reqBody) => {
+const updateArtist = (albumId, artist) => {
   console.log('updateArtist called');
 
-return exists('artists', 'artist', reqBody.artist)
+return exists('artists', 'artist', artist)
   .then(existence => {
       if(!existence) {
 
         return knex('artists')
           .insert([{
-            artist: reqBody.artist
+            artist: artist
           }], "*")
           .then(newArtist => {
             console.log('newArtist in db called', newArtist);
@@ -64,7 +68,10 @@ return exists('artists', 'artist', reqBody.artist)
           })
           .returning('*')
           .then(artistsUpdated => {
-            return artistsUpdated
+            return {
+              artist_id: artistsUpdated[0].artist_id,
+              artist: existence.artist
+            }
           })
       }
   })
