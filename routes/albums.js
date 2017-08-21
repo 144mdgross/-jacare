@@ -72,9 +72,25 @@ router.post('/', (req, res, next) => {
 
 // validate!
 router.patch('/:id', (req, res, next) => {
-  query.updateAlbum(req.params.id, req.body).then(updateAlbumTalbe => {
-    res.json({ updateAlbumTalbe })
-})
+
+  if (req.body.artist) {
+    query.updateArtist(req.params.id, req.body)
+      .then(updatedArtist => {
+        console.log('updatedArtist', updatedArtist);
+        res.json({ updatedArtist })
+      })
+  } else {
+    query.updateAlbum(req.params.id, req.body)
+      .then(updateAlbumTable => {
+        // for (key of updateAlbumTable) {
+        //   updateObj.key = updateAlbumTable.key
+        // }
+        res.json({ updateAlbumTable })
+    })
+  }
+
+
+  // res.json({ updateObj })
 
 })
 
