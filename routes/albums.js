@@ -5,80 +5,43 @@ const query = require('../modules/db_calls')
 const Boom = require('boom')
 
 // consider paginating results here
-//consider creating module for knex calls
 router.get('/', (req, res, next) => {
-  knex('albums')
-    .join('albums_artists', 'albums.id', 'albums_artists.album_id')
-    .join('artists', 'artists.id', 'albums_artists.artist_id')
-    .select('albums.id as album_id', 'albums.album', 'albums.year', 'albums.genre', 'artists.artist', 'albums_artists.artist_id')
-    .then(all => {
-
-      res.json({
-        all
-      })
+  query.getAll()
+    .then(data => {
+      res.json({ data })
     })
 });
 
 router.get('/:id', (req, res, next) => {
-  knex('albums')
-    .join('albums_artists', 'albums.id', 'albums_artists.album_id')
-    .join('artists', 'artists.id', 'albums_artists.artist_id')
-    .select('albums.id as album_id', 'albums.album', 'albums.year', 'albums.genre', 'artists.artist', 'albums_artists.artist_id')
-    .where('albums.id', req.params.id)
+  query.exists('albums', 'id', req.params.id)
     .then(album => {
-
-      // NOTE: think about enveloping the knex result. do I want to take it out of an array?
-      //NOTE: be consisent about how data sent is structured.
-      res.json({
-        album
-      })
-    })
-})
-
-//validate data here
-// plug function into substack to check if data already exists
-// if album exists artist will exist
-// if album doesn't exist artist may exist
-// as long as some peice of information is new albums_artists needs to be updated
-router.post('/', (req, res, next) => {
-
-  knex('albums')
-    .insert([{
-      album: req.body.album,
-      genre: req.body.genre,
-      year: req.body.year
-    }], '*')
-    .then(addedAlbum => {
-      knex('artists')
-        .insert([{
-          artist: req.body.artist
-        }], '*')
-        .then(addedArtist => {
-          knex('albums_artists')
-            .insert([{
-              album_id: addedAlbum[0].id,
-              artist_id: addedArtist[0].id
-            }], '*')
-            .then(addedAll => {
-              res.json({
-                album: addedAlbum[0].album,
-                artist: addedArtist[0].artist,
-                genre: addedAlbum[0].genre,
-                year: addedAlbum[0].year
-              })
-            })
-        })
-    })
-})
-
-// patch is set up to be able to behave like patch or put to handle
-// variety from clients
-router.patch('/:id', (req, res, next) => {
-  query.exists('albums', 'album', req.params.id)
-    .then(albumExists => {
-      if (!albumExists) {
+      if (!album) {
         return next(Boom.notFound(`Album ${req.params.id} does not exist.`))
-      } else {
+      }
+       else {
+        res.json({ album })
+      }
+    })
+})
+
+router.post('/', (req, res, next) => {
+  query.post(req.body)
+    .then(data => {
+      res.json({ data })
+    })
+})
+
+// patch can behave as patch or put
+router.patch('/:id', (req, res, next) => {
+  // check for existing resource before modifying database
+  query.exists('albums', 'id', req.params.id)
+    .then(albumExists => {
+      console.log('albumExists', albumExists);
+      if (!albumExists) {
+        // sends error to client for missing resource
+        return next(Boom.notFound(`Album ${req.params.id} does not exist.`))
+      }
+      else {
         if (req.body.artist && !req.body.album) {
           query.updateArtist(req.params.id, req.body.artist)
             .then(updatedArtist => {
@@ -87,26 +50,30 @@ router.patch('/:id', (req, res, next) => {
                 updatedArtist
               })
             })
-        } else if (req.body.album && !req.body.artist) {
+        }
+        else if (req.body.album && !req.body.artist) {
           query.updateAlbum(req.params.id, req.body)
-            .then(updateAlbumTable => {
+            .then(data => {
               res.json({
-                updateAlbumTable
+                data
               })
             })
-        } else if (req.body.album && req.body.artist) {
+        }
+        else if (req.body.album && req.body.artist) {
           query.updateAlbum(req.params.id, req.body)
             .then(upToDate => {
               query.updateArtist(req.params.id, req.body.artist)
                 .then(updatedAll => {
-                  res.json({
+                  // sends json object in consistent format w/ other data
+                  res.json({ data: [{
                     id: upToDate[0].id,
                     album: upToDate[0].album,
                     genre: upToDate[0].genre,
                     year: upToDate[0].year,
                     artist_id: updatedAll.artist_id,
                     artist: updatedAll.artist
-                  })
+                  }
+                ]})
                 })
             })
         }
@@ -114,111 +81,39 @@ router.patch('/:id', (req, res, next) => {
     })
 })
 
-// to define rules if client wants to put. That means they want to give me all information i have for albums in db
-// validate that all data needed from client is present before doing put
 router.put('/:id', (req, res, next) => {
-  let stateOfTheArtist = query.exists('artists', 'artist', req.body.artist).then(existenceKnown => {
 
-    knex('albums')
-      .where('id', req.params.id)
-      .update({
-        album: req.body.album,
-        genre: req.body.genre,
-        year: req.body.year
-      })
-      .returning('*')
-      .then(updated => {
-        if (!existenceKnown) {
-          knex('artists')
-            .insert([{
-              artist: req.body.artist
-            }], '*')
-            .then(newArtist => {
-              knex('albums_artists')
-                .where('album_id', req.params.id)
-                .update({
-                  artist_id: newArtist[0].id
-                })
-                .returning('*')
-                .then(result => {
-                  res.json({
-                    id: updated[0].id,
-                    album: updated[0].album,
-                    genre: updated[0].genre,
-                    year: updated[0].year,
-                    artist: newArtist[0].artist
-                  })
-                })
-            })
-        } else {
-
-          knex('albums_artists')
-            .where('album_id', req.params.id)
-            .update({
-              artist_id: existenceKnown.id
-            })
-            .then(allUpdated => {
-
-              res.json({
-                id: updated[0].id,
-                album: updated[0].album,
-                genre: updated[0].genre,
-                year: updated[0].year,
-                artist: existenceKnown.artist
-              })
-            })
-        }
-      })
+  query.exists('artists', 'artist', req.body.artist)
+    .then(existenceKnown => {
+      query.updateAlbum(req.params.id, req.body)
+        .then(upToCode => {
+          query.updateArtist(req.params.id, req.body.artist)
+            .then(updatedArtistInfo => {
+              res.json({ data: [{
+                id: upToCode[0].id,
+                album: upToCode[0].album,
+                genre: upToCode[0].genre,
+                year: upToCode[0].year,
+                artist_id: updatedArtistInfo.artist_id,
+                artist: updatedArtistInfo.artist
+              }
+            ]})
+          })
+        })
   })
 })
 
 router.delete('/:id', (req, res, next) => {
-
-  knex('albums_artists')
-    .where('album_id', req.params.id)
-    .del()
-    .returning('*')
-    .then(joinGone => {
-
-      knex('albums')
-        .where('id', req.params.id)
-        .del()
-        .returning('*')
-        .then(albumGone => {
-
-          if (joinGone.length === 1) {
-
-            knex('artists')
-              .where('id', joinGone[0].artist_id)
-              .del()
-              .returning('*')
-              .then(artistGone => {
-
-                res.json({
-                  id: albumGone[0].id,
-                  album: albumGone[0].album,
-                  artist: artistGone[0].artist,
-                  genre: albumGone[0].genre,
-                  year: albumGone[0].year
-                })
-
-              })
-          } else {
-
-            knex('artists')
-              .where('id', joinGone[0].artist_id)
-              .then(sendComplete => {
-
-                res.json({
-                  id: albumGone[0].id,
-                  album: albumGone[0].album,
-                  artist: 'fill in artist info',
-                  genre: albumGone[0].genre,
-                  year: albumGone[0].year
-                })
-              })
-          }
-        })
+  query.exists('albums', 'id', req.params.id)
+    .then(existenceDiscovered => {
+      if(!existenceDiscovered) {
+        return next(Boom.notFound(`Album ${req.params.id} does not exist.`))
+      } else {
+        query.remove(req.params.id)
+          .then(gone => {
+            res.json({ data: [gone]})
+          })
+      }
     })
 })
 
