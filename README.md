@@ -5,18 +5,33 @@ This is Megan Gross's NODE.js API for the back-end developer position.
 
 ### To Get Started:
 
-1. Clone this repository and cd into the project directory
+    1. After downloading and unzipping the files, install dependencies
 
-2. install dependencies
+      ```bash
+      $ npm install
+      ```
 
-  ```bash
-    npm install
-  ```
+    2. I used PostgreSQL to store data so you will want to set up your database
 
-3. start the server
+      ```bash
+      $ createdb gross_music_archive
+      ```
+      Then create the tables:
+      ```bash
+      $ knex migrate:latest
+      ```
+      Then run the seed files:
+      ```bash
+      $ knex seed:run
+      ```
 
-  ```bash
-    npm start
-  ```
+    3. start the server
 
-4. make requests!
+      ```bash
+      $ npm start
+      ```
+
+    4. make requests! If you have HTTPie installed here is an example request through the command line:
+      ```bash
+      $ http localhost:3000/api/v1/artists/75
+      ```
