@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const knex = require('../knex')
 const query = require('../modules/db_calls')
 const Boom = require('boom')
 const ev = require('express-validation')
